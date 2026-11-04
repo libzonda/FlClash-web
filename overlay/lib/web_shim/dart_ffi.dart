@@ -80,6 +80,32 @@ base class Union extends NativeType {
   const Union();
 }
 
+enum Abi {
+  androidArm,
+  androidArm64,
+  androidIa32,
+  androidX64,
+  androidRiscv64,
+  fuchsiaArm64,
+  fuchsiaX64,
+  iosArm,
+  iosArm64,
+  iosX64,
+  linuxArm,
+  linuxArm64,
+  linuxIa32,
+  linuxRiscv32,
+  linuxRiscv64,
+  linuxX64,
+  macosArm64,
+  macosX64,
+  windowsArm64,
+  windowsIa32,
+  windowsX64;
+
+  static Abi current() => Abi.linuxX64;
+}
+
 class Pointer<T extends NativeType> extends NativeType {
   final int address;
   dynamic _value;

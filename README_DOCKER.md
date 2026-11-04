@@ -35,14 +35,15 @@ services:
     container_name: flclash-web
     restart: unless-stopped
     ports:
-      - "9090:9090"         # Web UI Dashboard (default 9090)
+      - "80:80"             # Web UI Dashboard (default 80)
+      - "9090:9090"         # Clash External Controller (default 9090)
       - "7890:7890/tcp"     # Clash Mixed Proxy (default 7890, HTTP/SOCKS5)
       - "7890:7890/udp"
     # To enable transparent proxying in TUN mode, uncomment the line below to use host networking:
     # network_mode: host
     environment:
       - TZ=Asia/Shanghai                  # Timezone (default is UTC, recommended local)
-      - FLCLASH_WEB_LISTEN=0.0.0.0:9090   # Web listen address (default is 0.0.0.0:9090)
+      - FLCLASH_WEB_LISTEN=0.0.0.0:80     # Web listen address (default is 0.0.0.0:80)
       - FLCLASH_DATA_DIR=/data            # Data directory (default is /data)
     volumes:
       - ./data:/data        # Persistent data storage (default container path is /data)
@@ -60,7 +61,8 @@ Start the container:
 docker compose up -d
 ```
 
-- **Web Dashboard URL**: `http://<SERVER_IP>:9090`
+- **Web Dashboard URL**: `http://<SERVER_IP>` (default port 80)
+- **External Controller**: `http://<SERVER_IP>:9090`
 - **Proxy Port**: `7890`
 
 ---
@@ -109,7 +111,7 @@ services:
       - ./data:/data
     environment:
       - TZ=Asia/Shanghai
-      - FLCLASH_WEB_LISTEN=0.0.0.0:9090
+      - FLCLASH_WEB_LISTEN=0.0.0.0:80
       - FLCLASH_DATA_DIR=/data
 
 networks:
@@ -119,7 +121,7 @@ networks:
 
 #### Step 3: Configure FlClash Panel and Target Devices
 1. **Enable Port 53 DNS Listening**:
-   - Access `http://192.168.1.200:9090`, go to **Tools** -> **Advanced Settings** -> **DNS**;
+   - Access `http://192.168.1.200` (port 80), go to **Tools** -> **Advanced Settings** -> **DNS**;
    - Click **Add Override** -> change **Listen Address** to `0.0.0.0:53` and save, then enable **TUN Mode**.
 2. **Target Device Network Configuration (PC / Phone / TV)**:
    - Configure IPv4 manually:
@@ -169,14 +171,15 @@ services:
     container_name: flclash-web
     restart: unless-stopped
     ports:
-      - "9090:9090"         # Web UI 控制面板端口（默认 9090）
+      - "80:80"             # Web UI 控制面板端口（默认 80）
+      - "9090:9090"         # Clash 外部控制接口（默认 9090）
       - "7890:7890/tcp"     # Clash 混合代理端口（默认 7890，HTTP/SOCKS5）
       - "7890:7890/udp"
     # 如需 TUN 模式透明代理，建议取消下一行注释使用 host 网络模式：
     # network_mode: host
     environment:
       - TZ=Asia/Shanghai                  # 容器时区（镜像默认 UTC，建议指定本地时区）
-      - FLCLASH_WEB_LISTEN=0.0.0.0:9090   # Web 监听地址（镜像默认即为 0.0.0.0:9090）
+      - FLCLASH_WEB_LISTEN=0.0.0.0:80     # Web 监听地址（镜像默认即为 0.0.0.0:80）
       - FLCLASH_DATA_DIR=/data            # 数据存储路径（镜像默认即为 /data）
     volumes:
       - ./data:/data        # 持久化配置与节点数据（容器内默认路径为 /data）
@@ -194,7 +197,8 @@ services:
 docker compose up -d
 ```
 
-- **Web 访问地址**：`http://<服务器IP>:9090`
+- **Web 访问地址**：`http://<服务器IP>` (默认 80 端口)
+- **外部控制器**：`http://<服务器IP>:9090`
 - **代理端口**：`7890`
 
 ---
@@ -243,7 +247,7 @@ services:
       - ./data:/data
     environment:
       - TZ=Asia/Shanghai
-      - FLCLASH_WEB_LISTEN=0.0.0.0:9090
+      - FLCLASH_WEB_LISTEN=0.0.0.0:80
       - FLCLASH_DATA_DIR=/data
 
 networks:
@@ -253,7 +257,7 @@ networks:
 
 #### 第三步：FlClash 面板与目标设备配置
 1. **开放 53 端口 DNS 监听**：
-   - 访问 `http://192.168.1.200:9090`，进入 **工具** -> **进阶配置** -> **DNS**；
+   - 访问 `http://192.168.1.200` (默认 80 端口)，进入 **工具** -> **进阶配置** -> **DNS**；
    - 点击 **添加覆写项** -> 将 **监听地址** 修改为 `0.0.0.0:53` 并保存，开启 **TUN 模式**。
 2. **目标设备（手机/电脑/电视等）网络设置**：
    - 手动配置 IPv4：

@@ -34,7 +34,7 @@ func defaultListenAddr() string {
 	if env := os.Getenv("FLCLASH_WEB_LISTEN"); env != "" {
 		return env
 	}
-	return "0.0.0.0:9090"
+	return "0.0.0.0:80"
 }
 
 func seedGeoDataFiles(dataDir string, webFS fs.FS) {

@@ -250,3 +250,15 @@ class IpcServer {
   }
 }
 
+Future<Uint8List?> transcodeCharset({
+  required List<int> bytes,
+  required String label,
+  required bool lossy,
+}) async {
+  try {
+    return Uint8List.fromList(bytes);
+  } catch (_) {
+    return null;
+  }
+}
+

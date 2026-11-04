@@ -129,6 +129,6 @@ popd >/dev/null
 echo "========================================================"
 echo "  Build complete!"
 echo "  Standalone binary: ${DIST_DIR}/FlClash-web"
-echo "  Run locally:       ${DIST_DIR}/FlClash-web --listen 0.0.0.0:9090"
+echo "  Run locally:       ${DIST_DIR}/FlClash-web --listen 0.0.0.0:80"
 echo "========================================================"
 

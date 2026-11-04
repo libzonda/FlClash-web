@@ -1857,6 +1857,53 @@ class _GZipDecoder extends Converter<List<int>, List<int>> {
 const GZipCodec gzip = GZipCodec();
 const ZLibCodec zlib = ZLibCodec();
 
+class RawZLibFilter {
+  final bool _inflate;
+  final List<int> _buffer = [];
+  bool _processed = false;
+
+  RawZLibFilter._(this._inflate);
+
+  static RawZLibFilter inflateFilter({
+    int windowBits = 15,
+    List<int>? dictionary,
+    bool raw = false,
+  }) {
+    return RawZLibFilter._(true);
+  }
+
+  static RawZLibFilter deflateFilter({
+    int gzip = 0,
+    int level = 6,
+    int windowBits = 15,
+    int memLevel = 8,
+    int strategy = 0,
+    List<int>? dictionary,
+    bool raw = false,
+  }) {
+    return RawZLibFilter._(false);
+  }
+
+  void process(List<int> data, int start, int end) {
+    _buffer.addAll(data.sublist(start, end));
+  }
+
+  List<int>? processed({bool flush = true, bool end = false}) {
+    if (_processed) return null;
+    if (!end && !flush) return null;
+    _processed = true;
+    try {
+      if (_inflate) {
+        return Uint8List.fromList(const pkg_archive.GZipDecoder().decodeBytes(_buffer));
+      } else {
+        return Uint8List.fromList(const pkg_archive.GZipEncoder().encode(_buffer) ?? <int>[]);
+      }
+    } catch (_) {
+      throw const FormatException('Failed to process zlib stream');
+    }
+  }
+}
+
 class Isolate {
   static Future<R> run<R>(
     FutureOr<R> Function() computation, {

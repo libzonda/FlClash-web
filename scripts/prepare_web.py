@@ -497,6 +497,47 @@ def apply_patches():
     if "export 'vfs.dart';" not in rust_dart_io_text:
         rust_dart_io.write_text("export 'vfs.dart';\n" + rust_dart_io_text, encoding="utf-8")
 
+    # 4f. Update external-controller default bind address to 0.0.0.0:9090 for Docker/remote access
+    enum_path = FLCLASH_DIR / "lib" / "enum" / "enum.dart"
+    if enum_path.exists():
+        content = enum_path.read_text(encoding="utf-8")
+        if "'127.0.0.1:9090'" in content:
+            save_original(backups, enum_path)
+            content = content.replace("'127.0.0.1:9090'", "'0.0.0.0:9090'")
+            enum_path.write_text(content, encoding="utf-8")
+
+    models_gen_dir = FLCLASH_DIR / "lib" / "models" / "generated"
+    if models_gen_dir.exists():
+        for gen_file in models_gen_dir.glob("*.g.dart"):
+            content = gen_file.read_text(encoding="utf-8")
+            if "'127.0.0.1:9090'" in content:
+                save_original(backups, gen_file)
+                content = content.replace("'127.0.0.1:9090'", "'0.0.0.0:9090'")
+                gen_file.write_text(content, encoding="utf-8")
+
+    # 4g. Patch plugins/prism_ui/lib/keyboard.dart for Web compatibility (remove dart:io)
+    prism_keyboard = FLCLASH_DIR / "plugins" / "prism_ui" / "lib" / "keyboard.dart"
+    if prism_keyboard.exists():
+        content = prism_keyboard.read_text(encoding="utf-8")
+        if "import 'dart:io';" in content:
+            save_original(backups, prism_keyboard)
+            content = content.replace("import 'dart:io';", "import 'package:flutter/foundation.dart';")
+            content = content.replace("Platform.isMacOS", "defaultTargetPlatform == TargetPlatform.macOS")
+            prism_keyboard.write_text(content, encoding="utf-8")
+
+    # 4h. Patch plugins/prism_ui/lib/liquid_glass.dart for Web compatibility (pushClipRSuperellipse clipBehavior)
+    prism_liquid_glass = FLCLASH_DIR / "plugins" / "prism_ui" / "lib" / "liquid_glass.dart"
+    if prism_liquid_glass.exists():
+        content = prism_liquid_glass.read_text(encoding="utf-8")
+        target_str = "builder.pushClipRSuperellipse(corners.toRSuperellipse(rect));"
+        if target_str in content:
+            save_original(backups, prism_liquid_glass)
+            content = content.replace(
+                target_str,
+                "builder.pushClipRSuperellipse(corners.toRSuperellipse(rect), clipBehavior: ui.Clip.antiAlias);",
+            )
+            prism_liquid_glass.write_text(content, encoding="utf-8")
+
     # 5. Rewrite imports in FlClash/lib/**/*.dart (excluding lib/web_shim/**)
     patched_count = 0
     for dart_file in (FLCLASH_DIR / "lib").rglob("*.dart"):

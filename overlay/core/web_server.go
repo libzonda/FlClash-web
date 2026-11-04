@@ -836,15 +836,15 @@ func handleWebSocketCore(w http.ResponseWriter, r *http.Request) {
 		}
 		call.Arguments = rewriteVirtualPathsInArguments(call.Arguments)
 		switch call.Method {
-		case shutdownMethod:
+		case CoreMethod("core.shutdown"), CoreMethod("shutdown"):
 			// Keep the server-side Clash core alive when a browser tab closes or resets
 			reply(encodeResponse(MethodResponse{ID: call.ID, Result: true}))
 			continue
-		case startListenerMethod:
+		case listenerStartMethod:
 			if webStartTimeMs.Load() == 0 {
 				webStartTimeMs.Store(time.Now().UnixMilli())
 			}
-		case stopListenerMethod:
+		case listenerStopMethod:
 			webStartTimeMs.Store(0)
 		}
 		dispatchMethodCall(call, reply)

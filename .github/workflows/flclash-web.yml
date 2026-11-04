@@ -115,12 +115,12 @@ jobs:
           COPY dist/FlClash-web-linux-${TARGETARCH} /usr/local/bin/FlClash-web
           RUN chmod +x /usr/local/bin/FlClash-web && \
               ln -sf /usr/local/bin/FlClash-web /usr/local/bin/FlClash
-          ENV FLCLASH_WEB_LISTEN="0.0.0.0:9090" \
+          ENV FLCLASH_WEB_LISTEN="0.0.0.0:80" \
               FLCLASH_DATA_DIR="/data"
           VOLUME ["/data"]
-          EXPOSE 9090 7890
+          EXPOSE 80 9090 7890
           ENTRYPOINT ["/usr/local/bin/FlClash-web"]
-          CMD ["--listen", "0.0.0.0:9090", "--data-dir", "/data"]
+          CMD ["--listen", "0.0.0.0:80", "--data-dir", "/data"]
           EOF
 
       - name: Set up QEMU

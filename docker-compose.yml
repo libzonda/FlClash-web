@@ -4,14 +4,15 @@ services:
     container_name: flclash-web
     restart: unless-stopped
     ports:
-      - "9090:9090"         # Web UI 控制面板端口（默认 9090）
+      - "80:80"             # Web UI 控制面板端口（默认 80）
+      - "9090:9090"         # Clash 外部控制 RESTful API 端口（默认 9090）
       - "7890:7890/tcp"     # Clash 混合代理端口（默认 7890，HTTP/SOCKS5）
       - "7890:7890/udp"
     # 如需 TUN 模式透明代理，建议取消下一行注释使用 host 网络模式：
     # network_mode: host
     environment:
       - TZ=Asia/Shanghai                  # 容器时区（镜像默认 UTC，建议指定本地时区）
-      - FLCLASH_WEB_LISTEN=0.0.0.0:9090   # Web 监听地址（镜像默认即为 0.0.0.0:9090）
+      - FLCLASH_WEB_LISTEN=0.0.0.0:80     # Web 监听地址（镜像默认即为 0.0.0.0:80）
       - FLCLASH_DATA_DIR=/data            # 数据存储路径（镜像默认即为 /data）
     volumes:
       - ./data:/data        # 持久化配置与节点数据（容器内默认路径为 /data）

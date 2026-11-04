@@ -47,14 +47,15 @@ services:
     container_name: flclash-web
     restart: unless-stopped
     ports:
-      - "9090:9090"         # Web UI Dashboard (default 9090)
+      - "80:80"             # Web UI Dashboard (default 80)
+      - "9090:9090"         # Clash RESTful API (external-controller, default 9090)
       - "7890:7890/tcp"     # Clash Mixed Proxy (default 7890, HTTP/SOCKS5)
       - "7890:7890/udp"
     # To enable transparent proxying in TUN mode, uncomment the line below to use host networking:
     # network_mode: host
     environment:
       - TZ=Asia/Shanghai                  # Timezone (default is UTC, recommended local)
-      - FLCLASH_WEB_LISTEN=0.0.0.0:9090   # Web listen address (default is 0.0.0.0:9090)
+      - FLCLASH_WEB_LISTEN=0.0.0.0:80     # Web listen address (default is 0.0.0.0:80)
       - FLCLASH_DATA_DIR=/data            # Data directory (default is /data)
     volumes:
       - ./data:/data        # Persistent data storage (default container path is /data)
@@ -72,7 +73,8 @@ Start the container:
 docker compose up -d
 ```
 
-- **Web Dashboard URL**: `http://<SERVER_IP>:9090`
+- **Web Dashboard URL**: `http://<SERVER_IP>` (or `http://<SERVER_IP>:80`)
+- **External Controller (RESTful API)**: `http://<SERVER_IP>:9090`
 - **Proxy Port**: `7890`
 
 ---
@@ -121,7 +123,7 @@ services:
       - ./data:/data
     environment:
       - TZ=Asia/Shanghai
-      - FLCLASH_WEB_LISTEN=0.0.0.0:9090
+      - FLCLASH_WEB_LISTEN=0.0.0.0:80
       - FLCLASH_DATA_DIR=/data
 
 networks:
@@ -131,7 +133,7 @@ networks:
 
 #### Step 3: Configure FlClash Panel and Target Devices
 1. **Enable Port 53 DNS Listening**:
-   - Access `http://192.168.1.200:9090`, go to **Tools** -> **Advanced Settings** -> **DNS**;
+   - Access `http://192.168.1.200` (port 80), go to **Tools** -> **Advanced Settings** -> **DNS**;
    - Click **Add Override** -> change **Listen Address** to `0.0.0.0:53` and save, then enable **TUN Mode**.
 2. **Target Device Network Configuration (PC / Phone / TV)**:
    - Configure IPv4 manually:
