@@ -40,11 +40,12 @@ if [ -d "${FLCLASH_DIR}/.git" ]; then
     fi
     echo "      Targeting FlClash tag: ${RESOLVED_TAG}"
     git -C "${FLCLASH_DIR}" checkout -q "${RESOLVED_TAG}"
+    git -C "${FLCLASH_DIR}" submodule update --init --recursive
   fi
 fi
 
 RAW_VERSION="$(sed -n 's/^version: *\([^+ ]*\).*/\1/p' "${FLCLASH_DIR}/pubspec.yaml" | head -n 1)"
-VERSION="${RAW_VERSION:-0.9.2}"
+VERSION="${RAW_VERSION:-0.9.3}"
 echo "      FlClash version: ${VERSION}"
 
 # Ensure Clash.Meta submodule is initialized if building from git
