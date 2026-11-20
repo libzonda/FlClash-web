@@ -25,7 +25,7 @@ if [ -d "${FLCLASH_DIR}/.git" ]; then
     fi
   else
     RESOLVED_TAG="${FLCLASH_TAG}"
-    # Automatically add 'v' prefix if user input "0.9.3" instead of "v0.9.3"
+    # Automatically add 'v' prefix if user input "0.9.4" instead of "v0.9.4"
     if [[ "${RESOLVED_TAG}" =~ ^[0-9] ]]; then
       RESOLVED_TAG="v${RESOLVED_TAG}"
     fi
@@ -45,7 +45,7 @@ if [ -d "${FLCLASH_DIR}/.git" ]; then
 fi
 
 RAW_VERSION="$(sed -n 's/^version: *\([^+ ]*\).*/\1/p' "${FLCLASH_DIR}/pubspec.yaml" | head -n 1)"
-VERSION="${RAW_VERSION:-0.9.3}"
+VERSION="${RAW_VERSION:-0.9.4}"
 echo "      FlClash version: ${VERSION}"
 
 # Ensure Clash.Meta submodule is initialized if building from git

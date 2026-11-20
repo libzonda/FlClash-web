@@ -341,10 +341,29 @@ def apply_patches():
     enum_path = FLCLASH_DIR / "lib" / "enum" / "enum.dart"
     if enum_path.exists():
         content = enum_path.read_text(encoding="utf-8")
-        target_enum = (
+        target_enum_v093 = (
             "  static const normalProfileKeys = {\n"
             "    listen,\n"
             "    ipv6,\n"
+            "    enhancedMode,\n"
+            "    fakeIpFilter,\n"
+            "    fakeIpFilterMode,\n"
+            "    defaultNameserver,\n"
+            "    nameserver,\n"
+            "    fallback,\n"
+            "    proxyServerNameserver,\n"
+            "    directNameserver,\n"
+            "  };"
+        )
+        target_enum_v094 = (
+            "  static const normalProfileKeys = {\n"
+            "    listen,\n"
+            "    useHosts,\n"
+            "    useSystemHosts,\n"
+            "    ipv6,\n"
+            "    respectRules,\n"
+            "    preferH3,\n"
+            "    cacheAlgorithm,\n"
             "    enhancedMode,\n"
             "    fakeIpFilter,\n"
             "    fakeIpFilterMode,\n"
@@ -364,6 +383,7 @@ def apply_patches():
             "    ipv6,\n"
             "    respectRules,\n"
             "    preferH3,\n"
+            "    cacheAlgorithm,\n"
             "    enhancedMode,\n"
             "    fakeIpRange,\n"
             "    fakeIpRange6,\n"
@@ -377,14 +397,17 @@ def apply_patches():
             "    directNameserver,\n"
             "  };"
         )
-        if target_enum in content:
+        if target_enum_v094 in content:
             save_original(backups, enum_path)
-            enum_path.write_text(content.replace(target_enum, replacement_enum, 1), encoding="utf-8")
+            enum_path.write_text(content.replace(target_enum_v094, replacement_enum, 1), encoding="utf-8")
+        elif target_enum_v093 in content:
+            save_original(backups, enum_path)
+            enum_path.write_text(content.replace(target_enum_v093, replacement_enum, 1), encoding="utf-8")
 
     task_path = FLCLASH_DIR / "lib" / "common" / "task.dart"
     if task_path.exists():
         content = task_path.read_text(encoding="utf-8")
-        target_task = (
+        target_task_v093 = (
             "  rawDns = mergeDnsOverride(\n"
             "    rawDns,\n"
             "    overrides.dns.overrideJson(\n"
@@ -394,7 +417,15 @@ def apply_patches():
             "  );\n"
             "  rawConfig['dns'] = rawDns;"
         )
-        replacement_task = (
+        target_task_v094 = (
+            "  rawDns = mergeDnsOverride(\n"
+            "    rawDns,\n"
+            "    overrides.dns.overrideJson(overrides.dnsOverrideKeys),\n"
+            "  );\n"
+            "  mitm.network.applyToDns(rawDns);\n"
+            "  rawConfig['dns'] = rawDns;"
+        )
+        replacement_task_v093 = (
             "  rawDns = mergeDnsOverride(\n"
             "    rawDns,\n"
             "    overrides.dns.overrideJson(\n"
@@ -418,9 +449,34 @@ def apply_patches():
             "  }\n"
             "  rawConfig['dns'] = rawDns;"
         )
-        if target_task in content:
+        replacement_task_v094 = (
+            "  rawDns = mergeDnsOverride(\n"
+            "    rawDns,\n"
+            "    overrides.dns.overrideJson(overrides.dnsOverrideKeys),\n"
+            "  );\n"
+            "  mitm.network.applyToDns(rawDns);\n"
+            "  if (overrides.dnsOverrideKeys.contains(DnsOverrideKey.enhancedMode) &&\n"
+            "      overrides.dns.enhancedMode == DnsMode.fakeIp) {\n"
+            "    rawDns['enable'] = true;\n"
+            "    if (!overrides.dnsOverrideKeys.contains(DnsOverrideKey.fakeIpRange) &&\n"
+            "        overrides.dns.fakeIpRange.isNotEmpty) {\n"
+            "      rawDns['fake-ip-range'] = overrides.dns.fakeIpRange;\n"
+            "    }\n"
+            "  }\n"
+            "  if (realPatchConfig.allowLan &&\n"
+            "      !overrides.dnsOverrideKeys.contains(DnsOverrideKey.listen) &&\n"
+            "      rawDns['listen'] is String &&\n"
+            "      (rawDns['listen'] as String).startsWith('127.0.0.1:')) {\n"
+            "    rawDns['listen'] = (rawDns['listen'] as String).replaceFirst('127.0.0.1:', '0.0.0.0:');\n"
+            "  }\n"
+            "  rawConfig['dns'] = rawDns;"
+        )
+        if target_task_v094 in content:
             save_original(backups, task_path)
-            task_path.write_text(content.replace(target_task, replacement_task, 1), encoding="utf-8")
+            task_path.write_text(content.replace(target_task_v094, replacement_task_v094, 1), encoding="utf-8")
+        elif target_task_v093 in content:
+            save_original(backups, task_path)
+            task_path.write_text(content.replace(target_task_v093, replacement_task_v093, 1), encoding="utf-8")
 
     network_path = FLCLASH_DIR / "lib" / "common" / "network.dart"
     if network_path.exists():

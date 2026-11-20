@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       upstream_tag:
-        description: 'Target upstream FlClash tag (leave "latest" for newest stable release, e.g. v0.9.3)'
+        description: 'Target upstream FlClash tag (leave "latest" for newest stable release, e.g. v0.9.4)'
         required: false
         default: 'latest'
         type: string
@@ -27,7 +27,7 @@ permissions:
 env:
   UPSTREAM_REPO: 'chen08209/FlClash'
   IMAGE_NAME: flclash-web
-  FLUTTER_VERSION: '3.47.8'
+  FLUTTER_VERSION: '3.50.1'
   GO_VERSION: '1.27.3'
   SQLITE3_WASM_VERSION: '3.7.0'
 
@@ -55,7 +55,7 @@ jobs:
           echo "Triggered by event: ${EVENT_NAME}"
           echo "Target Upstream Repo: ${UPSTREAM_REPO}"
 
-          # Case 1: Triggered by manual tag push in current repo (e.g. git push origin v0.9.3)
+          # Case 1: Triggered by manual tag push in current repo (e.g. git push origin v0.9.4)
           if [ "${EVENT_NAME}" = "push" ] && [[ "${REF_NAME}" =~ ^v[0-9] ]]; then
             echo "Direct tag push detected: ${REF_NAME}"
             echo "should_build=true" >> "$GITHUB_OUTPUT"
@@ -147,7 +147,7 @@ jobs:
         run: |
           ./build.sh
           RAW_VER="$(sed -n 's/^version: *\([^+ ]*\).*/\1/p' FlClash/pubspec.yaml | head -n 1)"
-          VERSION="${RAW_VER:-0.9.3}"
+          VERSION="${RAW_VER:-0.9.4}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "::notice title=FlClash Upstream Version::Built FlClash-web v${VERSION}"
 
