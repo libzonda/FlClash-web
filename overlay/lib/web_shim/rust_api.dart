@@ -85,9 +85,7 @@ class HotKeySpec {
 
 Stream<int> hotKeyEvents() => const Stream<int>.empty();
 
-Future<List<HotKeyFailure>> setHotKeys({required List<HotKeySpec> specs}) async {
-  return const [];
-}
+List<HotKeyFailure> setHotKeys({required List<HotKeySpec> specs}) => const [];
 
 Future<String> evaluateScript({
   required String script,
@@ -261,4 +259,72 @@ Future<Uint8List?> transcodeCharset({
     return null;
   }
 }
+
+// Device
+Future<int> osMajorVersion() async => 0;
+
+// Fonts
+Future<List<String>> systemFontFamilies() async => const [];
+
+// Launch
+Future<bool> isAutostartEnabled({
+  required String id,
+  required String executable,
+}) async => false;
+
+Future<bool> setAutostart({
+  required String id,
+  required String displayName,
+  required String executable,
+  required bool enabled,
+}) async => false;
+
+Future<bool> registerUrlScheme({
+  required String scheme,
+  required String executable,
+}) async => false;
+
+int? readLocalMachineDword({required String key, required String value}) => null;
+
+// Proxy
+Future<bool> startSystemProxy({
+  required int port,
+  required List<String> bypassDomain,
+  String? pacScript,
+}) async => true;
+
+Future<bool> stopSystemProxy() async => true;
+
+// Network
+Stream<NetworkState> networkChanges() => const Stream<NetworkState>.empty();
+
+class NetworkState {
+  final bool wifi;
+  final bool vpn;
+
+  const NetworkState({required this.wifi, required this.vpn});
+
+  @override
+  int get hashCode => wifi.hashCode ^ vpn.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is NetworkState &&
+          runtimeType == other.runtimeType &&
+          wifi == other.wifi &&
+          vpn == other.vpn;
+}
+
+// Wi-Fi
+enum WifiSsidPermission { granted, denied, permanentlyDenied }
+
+Future<String?> currentWifiSsid() async => null;
+
+Future<WifiSsidPermission> checkWifiSsidPermission() async =>
+    WifiSsidPermission.granted;
+
+Future<WifiSsidPermission> requestWifiSsidPermission() async =>
+    WifiSsidPermission.granted;
+
 

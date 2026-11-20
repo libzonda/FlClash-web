@@ -12,6 +12,7 @@ class MitmTrustCheck {
   const MitmTrustCheck(
     this.trust, {
     this.missingStores = const [],
+    this.untrustedStores = const [],
     this.certutilInstall,
     this.systemStore = false,
     this.rootAvailable = false,
@@ -21,6 +22,7 @@ class MitmTrustCheck {
   final bool systemStore;
   final bool rootAvailable;
   final List<String> missingStores;
+  final List<String> untrustedStores;
   final String? certutilInstall;
 }
 
@@ -30,7 +32,7 @@ abstract interface class MitmTrustStore {
     Future<String> Function() issueLeaf,
   );
   Future<MitmInstallOutcome> install(MitmCertificate ca);
-  Future<bool> remove(MitmCertificate ca);
+  Future<MitmRemoveOutcome> remove(MitmCertificate ca);
 }
 
 class AndroidMitmTrustStore implements MitmTrustStore {
@@ -45,7 +47,8 @@ class AndroidMitmTrustStore implements MitmTrustStore {
       MitmInstallOutcome.saved;
 
   @override
-  Future<bool> remove(MitmCertificate ca) async => false;
+  Future<MitmRemoveOutcome> remove(MitmCertificate ca) async =>
+      MitmRemoveOutcome.removed;
 }
 
 MitmTrustStore? mitmTrustStoreForPlatform() => null;
