@@ -271,8 +271,44 @@ func collectNetworkInterfaces() []netInterfaceInfo {
 
 func handleFsInterfaces(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	ifaces := collectNetworkInterfaces()
+
+	// If request Host or FLCLASH_LAN_IP is a non-loopback IPv4, ensure it is prioritized as the primary interface
+	reqHost := r.Host
+	if h, _, err := net.SplitHostPort(reqHost); err == nil {
+		reqHost = h
+	}
+	if envLan := strings.TrimSpace(os.Getenv("FLCLASH_LAN_IP")); envLan != "" {
+		reqHost = envLan
+	}
+	if ip := net.ParseIP(reqHost); ip != nil && ip.To4() != nil && !ip.IsLoopback() {
+		lanIP := ip.String()
+		found := false
+		for i, iface := range ifaces {
+			for _, addr := range iface.Addresses {
+				if addr == lanIP {
+					found = true
+					if i > 0 {
+						ifaces = append([]netInterfaceInfo{ifaces[i]}, append(ifaces[:i], ifaces[i+1:]...)...)
+					}
+					break
+				}
+			}
+			if found {
+				break
+			}
+		}
+		if !found {
+			lanInfo := netInterfaceInfo{
+				Name:      "eth0",
+				Addresses: []string{lanIP},
+			}
+			ifaces = append([]netInterfaceInfo{lanInfo}, ifaces...)
+		}
+	}
+
 	_ = json.NewEncoder(w).Encode(map[string]any{
-		"networkInterfaces": collectNetworkInterfaces(),
+		"networkInterfaces": ifaces,
 	})
 }
 

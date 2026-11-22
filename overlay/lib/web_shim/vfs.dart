@@ -44,6 +44,19 @@ class WebFileSystem {
     return List.unmodifiable(_networkInterfaces);
   }
 
+  bool _isLikelyLanIpv4(String host) {
+    final parts = host.split('.');
+    if (parts.length != 4) return false;
+    final nums = <int>[];
+    for (final p in parts) {
+      final n = int.tryParse(p);
+      if (n == null || n < 0 || n > 255) return false;
+      nums.add(n);
+    }
+    if (nums[0] == 127 || nums[0] == 0) return false;
+    return true;
+  }
+
   void refreshNetworkInterfaces() {
     ensureInitialized();
     try {
@@ -62,6 +75,24 @@ class WebFileSystem {
               WebNetInterface(name: name, addresses: addrs),
             );
           }
+        }
+      }
+    } catch (_) {}
+
+    try {
+      final host = JsBridge.host.split(':').first.trim();
+      if (_isLikelyLanIpv4(host)) {
+        final existingIdx = _networkInterfaces.indexWhere(
+          (iface) => iface.addresses.contains(host),
+        );
+        if (existingIdx > 0) {
+          final item = _networkInterfaces.removeAt(existingIdx);
+          _networkInterfaces.insert(0, item);
+        } else if (existingIdx < 0) {
+          _networkInterfaces.insert(
+            0,
+            WebNetInterface(name: 'eth0', addresses: [host]),
+          );
         }
       }
     } catch (_) {}

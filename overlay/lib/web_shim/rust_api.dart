@@ -296,7 +296,25 @@ Future<bool> startSystemProxy({
 Future<bool> stopSystemProxy() async => true;
 
 // Network
-Stream<NetworkState> networkChanges() => const Stream<NetworkState>.empty();
+final StreamController<NetworkState> _networkStateController =
+    StreamController<NetworkState>.broadcast(
+  onListen: () {
+    Future.microtask(() {
+      if (!_networkStateController.isClosed) {
+        _networkStateController.add(const NetworkState(wifi: false, vpn: false));
+      }
+    });
+  },
+);
+
+Stream<NetworkState> networkChanges() {
+  Future.microtask(() {
+    if (!_networkStateController.isClosed) {
+      _networkStateController.add(const NetworkState(wifi: false, vpn: false));
+    }
+  });
+  return _networkStateController.stream;
+}
 
 class NetworkState {
   final bool wifi;
