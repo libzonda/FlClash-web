@@ -246,6 +246,9 @@ def apply_patches():
         "web_core_bridge.dart",
         "dart_io.dart",
         "rust_api_editor.dart",
+        "rust_api_window.dart",
+        "rust_api_tray.dart",
+        "rust_api_link.dart",
     ]
     for fname in shared_shim_files:
         src = web_shim_dir / fname
@@ -271,6 +274,24 @@ def apply_patches():
     rust_api_editor_entry = rust_api_lib / "editor.dart"
     save_original(backups, rust_api_editor_entry)
     rust_api_editor_entry.write_text("export 'rust_api_editor.dart';\n", encoding="utf-8")
+
+    # Update plugins/rust_api/lib/window.dart
+    rust_api_window_entry = rust_api_lib / "window.dart"
+    if rust_api_window_entry.exists():
+        save_original(backups, rust_api_window_entry)
+        rust_api_window_entry.write_text("export 'rust_api_window.dart';\n", encoding="utf-8")
+
+    # Update plugins/rust_api/lib/tray.dart
+    rust_api_tray_entry = rust_api_lib / "tray.dart"
+    if rust_api_tray_entry.exists():
+        save_original(backups, rust_api_tray_entry)
+        rust_api_tray_entry.write_text("export 'rust_api_tray.dart';\n", encoding="utf-8")
+
+    # Update plugins/rust_api/lib/link.dart
+    rust_api_link_entry = rust_api_lib / "link.dart"
+    if rust_api_link_entry.exists():
+        save_original(backups, rust_api_link_entry)
+        rust_api_link_entry.write_text("export 'rust_api_link.dart';\n", encoding="utf-8")
 
     # Update plugins/rust_api/pubspec.yaml
     rust_api_pubspec = FLCLASH_DIR / "plugins" / "rust_api" / "pubspec.yaml"
