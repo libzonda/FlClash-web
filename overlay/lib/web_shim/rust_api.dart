@@ -4,6 +4,7 @@ import 'dart:js_interop';
 import 'dart:typed_data';
 
 import 'js_bridge.dart';
+import 'vfs.dart';
 import 'web_core_bridge.dart';
 
 export 'rust_api_editor.dart';
@@ -225,7 +226,11 @@ class IpcServer {
     } else {
       _pendingMessages.add(text);
     }
-    if (text.contains('"setupConfig"') ||
+    if (text.contains('"config.setup"') ||
+        text.contains('"config.update"') ||
+        text.contains('"listener.start"') ||
+        text.contains('"listener.stop"') ||
+        text.contains('"setupConfig"') ||
         text.contains('"updateConfig"') ||
         text.contains('"startListener"') ||
         text.contains('"stopListener"')) {
@@ -296,23 +301,48 @@ Future<bool> startSystemProxy({
 Future<bool> stopSystemProxy() async => true;
 
 // Network
+bool _networkBridgeHooked = false;
+String? _lastNetworkSignature;
+
+void _emitCurrentNetworkState({bool force = false}) {
+  if (_networkStateController.isClosed) return;
+  try {
+    WebFileSystem.instance.refreshNetworkInterfaces();
+  } catch (_) {}
+  final signature = WebFileSystem.instance.primaryInterfaceSignature;
+  if (!force && signature == _lastNetworkSignature) {
+    return;
+  }
+  _lastNetworkSignature = signature;
+  final hasTun = WebFileSystem.instance.hasActiveTunInterface;
+  _networkStateController.add(NetworkState(wifi: false, vpn: hasTun));
+}
+
+void _ensureNetworkBridgeHooked() {
+  if (_networkBridgeHooked) return;
+  _networkBridgeHooked = true;
+  WebCoreBridge.instance.addNetworkChangeListener(() {
+    _emitCurrentNetworkState();
+  });
+}
+
 final StreamController<NetworkState> _networkStateController =
     StreamController<NetworkState>.broadcast(
   onListen: () {
+    _ensureNetworkBridgeHooked();
     Future.microtask(() {
-      if (!_networkStateController.isClosed) {
-        _networkStateController.add(const NetworkState(wifi: false, vpn: false));
-      }
+      _emitCurrentNetworkState(force: true);
     });
   },
 );
 
 Stream<NetworkState> networkChanges() {
-  Future.microtask(() {
-    if (!_networkStateController.isClosed) {
-      _networkStateController.add(const NetworkState(wifi: false, vpn: false));
-    }
-  });
+  _ensureNetworkBridgeHooked();
+  if (_networkStateController.hasListener) {
+    Future.microtask(() {
+      _emitCurrentNetworkState(force: true);
+    });
+  }
   return _networkStateController.stream;
 }
 

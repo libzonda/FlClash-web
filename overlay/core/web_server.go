@@ -166,21 +166,26 @@ type vfsEntry struct {
 type netInterfaceInfo struct {
 	Name      string   `json:"name"`
 	Addresses []string `json:"addresses"`
+	IsTun     bool     `json:"isTun,omitempty"`
 }
 
-func isClashTunInterface(iface net.Interface) bool {
+func isClashTunName(name string) bool {
 	if currentConfig != nil && currentConfig.General != nil && currentConfig.General.Tun.Device != "" {
-		if strings.EqualFold(iface.Name, currentConfig.General.Tun.Device) {
+		if strings.EqualFold(name, currentConfig.General.Tun.Device) {
 			return true
 		}
 	}
-	lower := strings.ToLower(iface.Name)
+	lower := strings.ToLower(name)
 	for _, prefix := range []string{"flclash", "meta", "mihomo", "utun"} {
 		if strings.HasPrefix(lower, prefix) {
 			return true
 		}
 	}
 	return false
+}
+
+func isClashTunInterface(iface net.Interface) bool {
+	return isClashTunName(iface.Name)
 }
 
 func isContainerOrBridgeInterface(iface net.Interface) bool {
@@ -250,6 +255,7 @@ func collectNetworkInterfaces() []netInterfaceInfo {
 				info := netInterfaceInfo{
 					Name:      iface.Name,
 					Addresses: ips,
+					IsTun:     isTun,
 				}
 				if isTun {
 					tunIfaces = append(tunIfaces, info)
@@ -269,43 +275,62 @@ func collectNetworkInterfaces() []netInterfaceInfo {
 	return collect(false)
 }
 
+// prioritizeRequestLanInterface places the request Host or FLCLASH_LAN_IP
+// immediately after any active TUN interfaces so LAN IPs are prioritized
+// when TUN is off without hiding an active TUN/Fake-IP interface.
+func prioritizeRequestLanInterface(ifaces []netInterfaceInfo, reqHost string, envLan string) []netInterfaceInfo {
+	host := reqHost
+	if h, _, err := net.SplitHostPort(host); err == nil {
+		host = h
+	}
+	if trimmedEnv := strings.TrimSpace(envLan); trimmedEnv != "" {
+		host = trimmedEnv
+	}
+	ip := net.ParseIP(host)
+	if ip == nil || ip.To4() == nil || ip.IsLoopback() {
+		return ifaces
+	}
+
+	lanIP := ip.String()
+	tunCount := 0
+	for tunCount < len(ifaces) && (ifaces[tunCount].IsTun || isClashTunName(ifaces[tunCount].Name)) {
+		tunCount++
+	}
+
+	for i, iface := range ifaces {
+		for _, addr := range iface.Addresses {
+			if addr == lanIP {
+				if i <= tunCount {
+					return ifaces
+				}
+				reordered := make([]netInterfaceInfo, 0, len(ifaces))
+				reordered = append(reordered, ifaces[:tunCount]...)
+				reordered = append(reordered, ifaces[i])
+				reordered = append(reordered, ifaces[tunCount:i]...)
+				reordered = append(reordered, ifaces[i+1:]...)
+				return reordered
+			}
+		}
+	}
+
+	lanInfo := netInterfaceInfo{
+		Name:      "eth0",
+		Addresses: []string{lanIP},
+	}
+	reordered := make([]netInterfaceInfo, 0, len(ifaces)+1)
+	reordered = append(reordered, ifaces[:tunCount]...)
+	reordered = append(reordered, lanInfo)
+	reordered = append(reordered, ifaces[tunCount:]...)
+	return reordered
+}
+
 func handleFsInterfaces(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	ifaces := collectNetworkInterfaces()
-
-	// If request Host or FLCLASH_LAN_IP is a non-loopback IPv4, ensure it is prioritized as the primary interface
-	reqHost := r.Host
-	if h, _, err := net.SplitHostPort(reqHost); err == nil {
-		reqHost = h
-	}
-	if envLan := strings.TrimSpace(os.Getenv("FLCLASH_LAN_IP")); envLan != "" {
-		reqHost = envLan
-	}
-	if ip := net.ParseIP(reqHost); ip != nil && ip.To4() != nil && !ip.IsLoopback() {
-		lanIP := ip.String()
-		found := false
-		for i, iface := range ifaces {
-			for _, addr := range iface.Addresses {
-				if addr == lanIP {
-					found = true
-					if i > 0 {
-						ifaces = append([]netInterfaceInfo{ifaces[i]}, append(ifaces[:i], ifaces[i+1:]...)...)
-					}
-					break
-				}
-			}
-			if found {
-				break
-			}
-		}
-		if !found {
-			lanInfo := netInterfaceInfo{
-				Name:      "eth0",
-				Addresses: []string{lanIP},
-			}
-			ifaces = append([]netInterfaceInfo{lanInfo}, ifaces...)
-		}
-	}
+	ifaces := prioritizeRequestLanInterface(
+		collectNetworkInterfaces(),
+		r.Host,
+		os.Getenv("FLCLASH_LAN_IP"),
+	)
 
 	_ = json.NewEncoder(w).Encode(map[string]any{
 		"networkInterfaces": ifaces,

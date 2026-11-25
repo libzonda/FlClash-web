@@ -24,8 +24,13 @@ class VfsNode {
 class WebNetInterface {
   final String name;
   final List<String> addresses;
+  final bool isTun;
 
-  WebNetInterface({required this.name, required this.addresses});
+  WebNetInterface({
+    required this.name,
+    required this.addresses,
+    this.isTun = false,
+  });
 }
 
 class WebFileSystem {
@@ -39,9 +44,35 @@ class WebFileSystem {
   bool isCoreListening = false;
   int coreStartTimeMs = 0;
 
+  static bool isTunInterfaceName(String name) {
+    final lower = name.toLowerCase();
+    return lower.startsWith('flclash') ||
+        lower.startsWith('meta') ||
+        lower.startsWith('mihomo') ||
+        lower.startsWith('utun');
+  }
+
   List<WebNetInterface> get networkInterfaces {
     ensureInitialized();
     return List.unmodifiable(_networkInterfaces);
+  }
+
+  bool get hasActiveTunInterface {
+    ensureInitialized();
+    return _networkInterfaces.any(
+      (iface) => iface.isTun || isTunInterfaceName(iface.name),
+    );
+  }
+
+  String get primaryInterfaceSignature {
+    ensureInitialized();
+    if (_networkInterfaces.isEmpty) {
+      return 'none';
+    }
+    final first = _networkInterfaces.first;
+    final isTun = first.isTun || isTunInterfaceName(first.name);
+    final firstAddr = first.addresses.isEmpty ? '' : first.addresses.first;
+    return '${isTun ? 'tun' : 'lan'}:${first.name}:$firstAddr';
   }
 
   bool _isLikelyLanIpv4(String host) {
@@ -71,8 +102,9 @@ class WebFileSystem {
                     ?.map((e) => e.toString())
                     .toList() ??
                 const [];
+            final isTun = item['isTun'] == true || isTunInterfaceName(name);
             _networkInterfaces.add(
-              WebNetInterface(name: name, addresses: addrs),
+              WebNetInterface(name: name, addresses: addrs, isTun: isTun),
             );
           }
         }
@@ -82,15 +114,21 @@ class WebFileSystem {
     try {
       final host = JsBridge.host.split(':').first.trim();
       if (_isLikelyLanIpv4(host)) {
+        var tunCount = 0;
+        while (tunCount < _networkInterfaces.length &&
+            (_networkInterfaces[tunCount].isTun ||
+                isTunInterfaceName(_networkInterfaces[tunCount].name))) {
+          tunCount++;
+        }
         final existingIdx = _networkInterfaces.indexWhere(
           (iface) => iface.addresses.contains(host),
         );
-        if (existingIdx > 0) {
+        if (existingIdx > tunCount) {
           final item = _networkInterfaces.removeAt(existingIdx);
-          _networkInterfaces.insert(0, item);
+          _networkInterfaces.insert(tunCount, item);
         } else if (existingIdx < 0) {
           _networkInterfaces.insert(
-            0,
+            tunCount,
             WebNetInterface(name: 'eth0', addresses: [host]),
           );
         }

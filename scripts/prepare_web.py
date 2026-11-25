@@ -457,7 +457,13 @@ def apply_patches():
             "  if (overrides.dnsOverrideKeys.contains(DnsOverrideKey.enhancedMode) &&\n"
             "      overrides.dns.enhancedMode == DnsMode.fakeIp) {\n"
             "    rawDns['enable'] = true;\n"
+            "    final existingFakeIpRange =\n"
+            "        (rawDns['fake-ip-range']?.toString() ?? '').trim();\n"
+            "    final existingFakeIpRange6 =\n"
+            "        (rawDns['fake-ip-range6']?.toString() ?? '').trim();\n"
             "    if (!overrides.dnsOverrideKeys.contains(DnsOverrideKey.fakeIpRange) &&\n"
+            "        existingFakeIpRange.isEmpty &&\n"
+            "        existingFakeIpRange6.isEmpty &&\n"
             "        overrides.dns.fakeIpRange.isNotEmpty) {\n"
             "      rawDns['fake-ip-range'] = overrides.dns.fakeIpRange;\n"
             "    }\n"
@@ -479,7 +485,13 @@ def apply_patches():
             "  if (overrides.dnsOverrideKeys.contains(DnsOverrideKey.enhancedMode) &&\n"
             "      overrides.dns.enhancedMode == DnsMode.fakeIp) {\n"
             "    rawDns['enable'] = true;\n"
+            "    final existingFakeIpRange =\n"
+            "        (rawDns['fake-ip-range']?.toString() ?? '').trim();\n"
+            "    final existingFakeIpRange6 =\n"
+            "        (rawDns['fake-ip-range6']?.toString() ?? '').trim();\n"
             "    if (!overrides.dnsOverrideKeys.contains(DnsOverrideKey.fakeIpRange) &&\n"
+            "        existingFakeIpRange.isEmpty &&\n"
+            "        existingFakeIpRange6.isEmpty &&\n"
             "        overrides.dns.fakeIpRange.isNotEmpty) {\n"
             "      rawDns['fake-ip-range'] = overrides.dns.fakeIpRange;\n"
             "    }\n"
@@ -502,29 +514,38 @@ def apply_patches():
     network_path = FLCLASH_DIR / "lib" / "common" / "network.dart"
     if network_path.exists():
         content = network_path.read_text(encoding="utf-8")
-        target_net = (
-            "    if (nameLowCase.contains('wlan') ||\n"
-            "        nameLowCase.contains('wi-fi') ||\n"
-            "        nameLowCase == 'en0' ||\n"
-            "        nameLowCase == 'eth0') {\n"
-            "      return true;\n"
-            "    }"
+        target_ext = (
+            "extension NetworkInterfaceExt on NetworkInterface {\n"
+            "  bool get isWifi {"
         )
-        replacement_net = (
-            "    if (nameLowCase.contains('flclash') ||\n"
+        replacement_ext = (
+            "extension NetworkInterfaceExt on NetworkInterface {\n"
+            "  bool get isTun {\n"
+            "    final nameLowCase = name.toLowerCase();\n"
+            "    return nameLowCase.contains('flclash') ||\n"
             "        nameLowCase.contains('meta') ||\n"
             "        nameLowCase.contains('mihomo') ||\n"
-            "        nameLowCase.contains('utun') ||\n"
-            "        nameLowCase.contains('wlan') ||\n"
-            "        nameLowCase.contains('wi-fi') ||\n"
-            "        nameLowCase == 'en0' ||\n"
-            "        nameLowCase == 'eth0') {\n"
-            "      return true;\n"
-            "    }"
+            "        nameLowCase.contains('utun');\n"
+            "  }\n\n"
+            "  bool get isWifi {"
         )
-        if target_net in content:
+        target_sort = (
+            "        ..sort((a, b) {\n"
+            "          if (a.isWifi && !b.isWifi) return -1;\n"
+            "          if (!a.isWifi && b.isWifi) return 1;"
+        )
+        replacement_sort = (
+            "        ..sort((a, b) {\n"
+            "          if (a.isTun && !b.isTun) return -1;\n"
+            "          if (!a.isTun && b.isTun) return 1;\n"
+            "          if (a.isWifi && !b.isWifi) return -1;\n"
+            "          if (!a.isWifi && b.isWifi) return 1;"
+        )
+        if target_ext in content and target_sort in content:
             save_original(backups, network_path)
-            network_path.write_text(content.replace(target_net, replacement_net, 1), encoding="utf-8")
+            content = content.replace(target_ext, replacement_ext, 1)
+            content = content.replace(target_sort, replacement_sort, 1)
+            network_path.write_text(content, encoding="utf-8")
 
     # 4e. Hide window header caption (minimize/maximize/close) on Web in lib/common/layout.dart
     layout_path = FLCLASH_DIR / "lib" / "common" / "layout.dart"
