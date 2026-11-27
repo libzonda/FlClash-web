@@ -23,6 +23,8 @@ enum WindowSignal {
   lifecycleHidden,
   lifecycleInactive,
   lifecycleResumed,
+  screensUnseen,
+  screensSeen,
 }
 
 enum WindowEvent {
@@ -36,6 +38,8 @@ enum WindowEvent {
   leaveFullScreen,
   shouldTerminate,
   activate,
+  screensUnseen,
+  screensSeen,
 }
 
 @immutable
@@ -64,6 +68,8 @@ abstract mixin class WindowListener {
   void onWindowLeaveFullScreen() {}
   void onWindowShouldTerminate() {}
   void onWindowActivate() {}
+  void onWindowScreensUnseen() {}
+  void onWindowScreensSeen() {}
   void onWindowEvent(WindowEvent event) {}
 }
 
@@ -120,6 +126,12 @@ abstract class DesktopWindow {
           break;
         case WindowEvent.activate:
           listener.onWindowActivate();
+          break;
+        case WindowEvent.screensUnseen:
+          listener.onWindowScreensUnseen();
+          break;
+        case WindowEvent.screensSeen:
+          listener.onWindowScreensSeen();
           break;
       }
     }

@@ -190,6 +190,15 @@ final class TrayCapabilities {
   static TrayCapabilities of(dynamic platform) => none;
 }
 
+final class TrayException implements Exception {
+  const TrayException(this.reason);
+
+  final String reason;
+
+  @override
+  String toString() => 'TrayException: $reason';
+}
+
 final class Tray {
   Tray._();
 

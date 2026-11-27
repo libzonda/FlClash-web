@@ -65,6 +65,50 @@ final class WChar extends NativeType {
   const WChar();
 }
 
+final class Int extends NativeType {
+  const Int();
+}
+
+final class UnsignedInt extends NativeType {
+  const UnsignedInt();
+}
+
+final class Short extends NativeType {
+  const Short();
+}
+
+final class UnsignedShort extends NativeType {
+  const UnsignedShort();
+}
+
+final class Long extends NativeType {
+  const Long();
+}
+
+final class UnsignedLong extends NativeType {
+  const UnsignedLong();
+}
+
+final class LongLong extends NativeType {
+  const LongLong();
+}
+
+final class UnsignedLongLong extends NativeType {
+  const UnsignedLongLong();
+}
+
+final class Float extends NativeType {
+  const Float();
+}
+
+final class Double extends NativeType {
+  const Double();
+}
+
+final class Bool extends NativeType {
+  const Bool();
+}
+
 final class NativeFunction<T extends Function> extends NativeType {
   const NativeFunction();
 }
@@ -201,6 +245,10 @@ class DynamicLibrary {
   }) {
     if (symbolName == 'geteuid' || symbolName == 'getuid') {
       final dynamic fn = () => 0;
+      return fn as F;
+    }
+    if (symbolName == 'access') {
+      final dynamic fn = (Pointer<Utf8> _, int __) => -1;
       return fn as F;
     }
     throw UnsupportedError('FFI lookupFunction($symbolName) called on Web');

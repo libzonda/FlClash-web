@@ -330,19 +330,20 @@ def apply_patches():
             save_original(backups, setup_action_path)
             setup_action_path.write_text(content.replace(target, replacement, 1), encoding="utf-8")
 
-    # 4b. Patch FileImage(File(path)) in lib/plugins/app.dart and pushClipRSuperellipse in lib/ui/liquid_glass.dart
-    app_plugin_path = FLCLASH_DIR / "lib" / "plugins" / "app.dart"
-    if app_plugin_path.exists():
-        content = app_plugin_path.read_text(encoding="utf-8")
-        if "return FileImage(File(path));" in content:
-            save_original(backups, app_plugin_path)
-            app_plugin_path.write_text(
-                content.replace(
-                    "return FileImage(File(path));",
-                    "return MemoryImage(File(path).readAsBytesSync());",
-                ),
-                encoding="utf-8",
-            )
+    # 4b. Patch FileImage(File(path)) in lib/plugins/app.dart & app_icon.dart and pushClipRSuperellipse in lib/ui/liquid_glass.dart
+    for plugin_rel in ("app.dart", "app_icon.dart"):
+        app_plugin_path = FLCLASH_DIR / "lib" / "plugins" / plugin_rel
+        if app_plugin_path.exists():
+            content = app_plugin_path.read_text(encoding="utf-8")
+            if "return FileImage(File(path));" in content:
+                save_original(backups, app_plugin_path)
+                app_plugin_path.write_text(
+                    content.replace(
+                        "return FileImage(File(path));",
+                        "return MemoryImage(File(path).readAsBytesSync());",
+                    ),
+                    encoding="utf-8",
+                )
 
     liquid_glass_path = FLCLASH_DIR / "lib" / "ui" / "liquid_glass.dart"
     if liquid_glass_path.exists():
@@ -635,6 +636,46 @@ def apply_patches():
                 "builder.pushClipRSuperellipse(corners.toRSuperellipse(rect), clipBehavior: ui.Clip.antiAlias);",
             )
             prism_liquid_glass.write_text(content, encoding="utf-8")
+
+    # 4i. On Web, Database.readApart should reuse the open WASM connection instead of spawning a second NativeDatabase handle
+    database_path = FLCLASH_DIR / "lib" / "database" / "database.dart"
+    if database_path.exists():
+        content = database_path.read_text(encoding="utf-8")
+        target_read_apart = (
+            "  Future<T> readApart<T>(Future<T> Function(Database db) read) async {\n"
+            "    final filePath = _filePath;\n"
+            "    if (filePath == null) {\n"
+            "      return read(this);\n"
+            "    }\n"
+            "    final path = await (_resolvedPath ??= _resolvePath(filePath));\n"
+            "    if (path == null) {\n"
+            "      return read(this);\n"
+            "    }\n"
+            "    return Isolate.run(() => _readFile(path, read));\n"
+            "  }"
+        )
+        replacement_read_apart = (
+            "  Future<T> readApart<T>(Future<T> Function(Database db) read) async {\n"
+            "    if (identical(0, 0.0)) {\n"
+            "      return read(this);\n"
+            "    }\n"
+            "    final filePath = _filePath;\n"
+            "    if (filePath == null) {\n"
+            "      return read(this);\n"
+            "    }\n"
+            "    final path = await (_resolvedPath ??= _resolvePath(filePath));\n"
+            "    if (path == null) {\n"
+            "      return read(this);\n"
+            "    }\n"
+            "    return Isolate.run(() => _readFile(path, read));\n"
+            "  }"
+        )
+        if target_read_apart in content:
+            save_original(backups, database_path)
+            database_path.write_text(
+                content.replace(target_read_apart, replacement_read_apart, 1),
+                encoding="utf-8",
+            )
 
     # 5. Rewrite imports in FlClash/lib/**/*.dart (excluding lib/web_shim/**)
     patched_count = 0

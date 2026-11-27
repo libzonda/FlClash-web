@@ -265,6 +265,12 @@ Future<Uint8List?> transcodeCharset({
   }
 }
 
+Future<String?> appIconFile({
+  required String processPath,
+  required int size,
+  required String cacheDir,
+}) async => null;
+
 // Device
 Future<int> osMajorVersion() async => 0;
 

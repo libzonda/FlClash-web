@@ -147,7 +147,7 @@ jobs:
         run: |
           ./build.sh
           RAW_VER="$(sed -n 's/^version: *\([^+ ]*\).*/\1/p' FlClash/pubspec.yaml | head -n 1)"
-          VERSION="${RAW_VER:-0.9.4}"
+          VERSION="${RAW_VER:-0.9.5}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "::notice title=FlClash Upstream Version::Built FlClash-web v${VERSION}"
 

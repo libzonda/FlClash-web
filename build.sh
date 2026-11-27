@@ -15,7 +15,7 @@ echo "========================================================"
 
 # Resolve and checkout latest upstream FlClash release tag
 FLCLASH_TAG="${FLCLASH_TAG:-latest}"
-if [ -d "${FLCLASH_DIR}/.git" ]; then
+if [ -e "${FLCLASH_DIR}/.git" ]; then
   echo "[1/6] Resolving upstream FlClash release tag (FLCLASH_TAG=${FLCLASH_TAG})..."
   git -C "${FLCLASH_DIR}" fetch --tags origin 2>/dev/null || true
   if [ "${FLCLASH_TAG}" = "latest" ]; then
@@ -25,7 +25,7 @@ if [ -d "${FLCLASH_DIR}/.git" ]; then
     fi
   else
     RESOLVED_TAG="${FLCLASH_TAG}"
-    # Automatically add 'v' prefix if user input "0.9.4" instead of "v0.9.4"
+    # Automatically add 'v' prefix if user input "0.9.5" instead of "v0.9.5"
     if [[ "${RESOLVED_TAG}" =~ ^[0-9] ]]; then
       RESOLVED_TAG="v${RESOLVED_TAG}"
     fi
@@ -45,7 +45,7 @@ if [ -d "${FLCLASH_DIR}/.git" ]; then
 fi
 
 RAW_VERSION="$(sed -n 's/^version: *\([^+ ]*\).*/\1/p' "${FLCLASH_DIR}/pubspec.yaml" | head -n 1)"
-VERSION="${RAW_VERSION:-0.9.4}"
+VERSION="${RAW_VERSION:-0.9.5}"
 echo "      FlClash version: ${VERSION}"
 
 # Ensure Clash.Meta submodule is initialized if building from git

@@ -11,6 +11,7 @@ import 'vfs.dart';
 
 WasmSqlite3? _cachedSqlite3;
 final InMemoryFileSystem _sharedSqliteVfs = InMemoryFileSystem();
+final Set<String> _seededSqlitePaths = {};
 bool _vfsRegistered = false;
 
 Future<WasmSqlite3> _getSqlite3() async {
@@ -144,14 +145,41 @@ class _VfsSyncInterceptor extends QueryInterceptor {
   }
 }
 
-class NativeDatabase {
+class NativeDatabase extends LazyDatabase {
+  NativeDatabase(
+    File file, {
+    bool logStatements = false,
+    void Function(CommonDatabase)? setup,
+    bool cachePreparedStatements = false,
+  }) : super(() => _openWasmDatabase(
+          file,
+          logStatements: logStatements,
+          setup: setup,
+        ));
+
   static QueryExecutor createInBackground(
     File file, {
     bool logStatements = false,
+    void Function(CommonDatabase)? setup,
+    bool cachePreparedStatements = false,
   }) {
+    return NativeDatabase(
+      file,
+      logStatements: logStatements,
+      setup: setup,
+      cachePreparedStatements: cachePreparedStatements,
+    );
+  }
+
+  static Future<QueryExecutor> _openWasmDatabase(
+    File file, {
+    bool logStatements = false,
+    void Function(CommonDatabase)? setup,
+  }) async {
     final normPath = WebFileSystem.instance.normalize(file.path);
-    return LazyDatabase(() async {
-      final sqlite3 = await _getSqlite3();
+    final sqlite3 = await _getSqlite3();
+    if (!_seededSqlitePaths.contains(normPath)) {
+      _seededSqlitePaths.add(normPath);
       if (WebFileSystem.instance.isFile(normPath)) {
         try {
           final existingBytes = WebFileSystem.instance.readBytes(normPath);
@@ -160,16 +188,21 @@ class NativeDatabase {
           }
         } catch (_) {}
       }
-      final wasmDb = WasmDatabase(
-        sqlite3: sqlite3,
-        path: normPath,
-        logStatements: logStatements,
-        setup: (db) {
+    }
+    final wasmDb = WasmDatabase(
+      sqlite3: sqlite3,
+      path: normPath,
+      logStatements: logStatements,
+      setup: (db) {
+        try {
+          setup?.call(db);
+        } catch (_) {}
+        try {
           db.execute('PRAGMA journal_mode = MEMORY;');
-        },
-      );
-      return wasmDb.interceptWith(_VfsSyncInterceptor(normPath));
-    });
+        } catch (_) {}
+      },
+    );
+    return wasmDb.interceptWith(_VfsSyncInterceptor(normPath));
   }
 }
 
